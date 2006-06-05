@@ -7,7 +7,9 @@ package Set::Partition;
 use strict;
 
 use vars qw/$VERSION/;
-$VERSION = '0.01';
+$VERSION = '0.02';
+
+use constant DEBUG => 0; # if you want to see what's going on
 
 =head1 NAME
 
@@ -15,15 +17,15 @@ Set::Partition - Enumerate all arrangements of a set in fixed subsets
 
 =head1 VERSION
 
-This document describes version 0.01 of Set::Partition,
-released 2006-05-23.
+This document describes version 0.02 of Set::Partition,
+released 2006-06-05.
 
 =head1 SYNOPSIS
 
   use Set::Partition;
 
   my $s = Set::Partition->new(
-    list      => [qw('a' .. 'e')],
+    list      => [qw(a b c d e)],
     partition => [2, 3],
   );
   while (my $p = $s->next) {
@@ -41,17 +43,26 @@ released 2006-05-23.
   (c e) (a b d)
   (d e) (a b c)
 
+  # or with a hash
+  my $s = Set::Partition->new(
+    list      => { b => 'bat', c => 'cat', d => 'dog' },
+    partition => [2, 1],
+  );
+  while (my $p = $s->next) {
+    ...
+  }
+
 =head1 DESCRIPTION
 
-C<Set::Partition> takes a list of elements (scalars or references
-or whatever) and a list numbers that represent the sizes of the
-partitions into which the list of elements should be arranged.
+C<Set::Partition> takes a list or hash of elements  and a list
+numbers that represent the sizes of the partitions into which the
+list of elements should be arranged.
 
 The resulting object can then be used as an iterator which returns
 a reference to an array of lists, that represents the original list
-arranged according to the given partitioning information. All
-possible arrangements are returned, and the object returns C<undef>
-when the entire combination space has been exhausted.
+arranged according to the given partitioning. All possible arrangements
+are returned, and the object returns C<undef> when the entire
+combination space has been exhausted.
 
 =head1 METHODS
 
@@ -79,7 +90,21 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $part = $args{partition} || [];
-    my $list = $args{list}      || [];
+    my $in   = $args{list};
+    my $list;
+    my $val;
+    if ($in) {
+        if (ref($in) eq 'HASH') {
+            $list = [keys %$in];
+            $val  = [values %$in];
+        }
+        else {
+            $list = $in;
+        }
+    }
+    else {
+        $list = [];
+    }
     my $sum  = 0;
     $sum += $_ for @$part;
     if ($sum > @$list) {
@@ -92,8 +117,10 @@ sub new {
     }
 
     bless {
-        list => $args{list},
+        list => $list,
+        val  => $val,
         part => $args{partition},
+        num  => [0..$#$list],
     },
     $class;
 }
@@ -115,36 +142,55 @@ sub next {
     else {
         my $s = 0;
         push @$state, ($s++) x $_ for @{$self->{part}};
-        $state ||= [(0) x (@$list)] if $list; # if no partition was given
+        $state ||= [(0) x (@$list)] if @$list; # if no partition was given
         $self->{state} = $state;
     }
     my $out;
-    push @{$out->[$state->[$_]]}, $list->[$_] for 0..$#$list;
-	return $out;
+    if ($self->{val}) {
+        $out->[$state->[$_]]{$list->[$_]} = $self->{val}[$_] for @{$self->{num}};
+    }
+    else {
+        push @{$out->[$state->[$_]]}, $list->[$_] for @{$self->{num}};
+    }
+    DEBUG and print "@{$self->{state}}\n";
+    return $out;
 }
 
 sub _bump {
     my $self = shift;
-    my $in = $self->{state};
-    my $off = $#$in-1;
+    my $in   = $self->{state};
+    my $end  = $#$in;
+    my $off  = $end-1;
+    my $inc  = 0;
     while ($off >= 0) {
-        if ($in->[$off] < $in->[$off+1]) {
-            if ($in->[1+$off] > 1+$in->[$off]) {
-                # find smallest in [$off+1..$#$in] > $in->[$off];
+        my $sib = $off+1;
+        ++$inc if $in->[$off] > $in->[$sib];
+        if ($in->[$off] < $in->[$sib]) {
+            if ($in->[$sib] > 1+$in->[$off]) {
+                # find smallest in [$sib..$end] > $in->[$off];
                 my $next = @$in;
                 while (--$next) {
                     last if $in->[$next] > $in->[$off];
                 }
                 (@{$in}[$off, $next]) = (@{$in}[$next, $off]);
-                @{$in}[$off+1..$#$in] = reverse @{$in}[$off+1..$#$in]
-                    if $off+1 < $#$in;
+                if (DEBUG) {
+                    print "@$in (reverse @{$in}[$sib..$end] needed)\n"
+                        if $sib < $end;
+                }
+                @{$in}[$sib..$end] = reverse @{$in}[$sib..$end]
+                    if $sib < $end;
             }
             else {
                 # just have to flip the current and next
-                (@{$in}[$off, $off+1]) = (@{$in}[$off+1, $off]);
-                # but we have to sort, seems inescapable
-                @{$in}[$off+1..$#$in] = sort {$a <=> $b} @{$in}[$off+1..$#$in]
-                    if $off+1 < $#$in;
+                DEBUG and print +(' ' x ($off*2)) . "^ ^\n";
+                (@{$in}[$off, $sib]) = (@{$in}[$sib, $off]);
+                if (DEBUG) {
+                    print "@$in (sort @{$in}[$sib..$end] needed d=$inc)\n"
+                        if $sib < $end and $inc;
+                }
+                # have to sort
+                @{$in}[$sib..$end] = sort {$a <=> $b} @{$in}[$sib..$end]
+                    if $sib < $end and $inc;
             }
             return 1;
         }
@@ -172,7 +218,12 @@ sub reset {
 
 =head1 DIAGNOSTICS
 
-None.
+=head2 sum of partitions (%d) exceeds available elements (%d)
+
+A list of partition sizes (for instance, 2, 3, 4) was given, along
+with a list to partition (for instance, containing 8 elements),
+however, the number of elements required to fill the different
+partitions (9) exceeds the number available in the source list (8).
 
 =head1 NOTES
 
@@ -214,7 +265,8 @@ Make sure you include the output from the following two commands:
 
 =head1 ACKNOWLEDGEMENTS
 
-None.
+Ken Williams suggested the possibility to use a hash as a source
+for partitioning.
 
 =head1 AUTHOR
 

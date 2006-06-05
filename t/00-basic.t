@@ -26,8 +26,8 @@ diag( "testing Set::Partition v$Set::Partition::VERSION" );
     ok( defined($t), 'new() defines ...' );
     ok( ref($t) eq 'Set::Partition', '... a Set::Partition object' );
 
-	my $r = $t->next;
-	ok( !defined($r), 'cannot arrange nothing' );
+    my $r = $t->next;
+    ok( !defined($r), 'cannot arrange nothing' );
 }
 
 SKIP: {

@@ -7,7 +7,7 @@
 
 use strict;
 
-eval qq{use Test::More tests => 79};
+eval qq{use Test::More tests => 81};
 if( $@ ) {
     warn "# Test::More not available, no tests performed\n";
     print "1..1\nok 1\n";
@@ -20,16 +20,16 @@ my $Unchanged = 'The scalar remains the same';
 $_ = $Unchanged;
 
 {
-	my $s = Set::Partition->new( list => [qw(x y z)] );
-	my $p = $s->next;
-	is_deeply( $p, [[ qw(x y z) ]], 'unpartitioned set' );
+    my $s = Set::Partition->new( list => [qw(x y z)] );
+    my $p = $s->next;
+    is_deeply( $p, [[ qw(x y z) ]], 'unpartitioned set' );
 
-	$p = $s->next;
-	ok( !defined($p), '...exhausted');
+    $p = $s->next;
+    ok( !defined($p), '...exhausted');
 
-	$p = $s->reset;
-	$p = $s->next;
-	is_deeply( $p, [[ qw(x y z) ]], 'unpartitioned reset' );
+    $p = $s->reset;
+    $p = $s->next;
+    is_deeply( $p, [[ qw(x y z) ]], 'unpartitioned reset' );
 }
 
 {
@@ -38,55 +38,82 @@ $_ = $Unchanged;
 }
 
 {
-	my $s = Set::Partition->new( list => [qw(g h)], partition => [1, 1] );
-	my $p = $s->next;
-	is_deeply( $p, [ [qw(g)], [qw(h)] ], 'set 1,1 first' );
-	$p = $s->next;
-	is_deeply( $p, [ [qw(h)], [qw(g)] ], 'set 1,1 second' );
-	$p = $s->next;
-	ok( !defined($p), 'set 1,1 exhausted');
+    my $s = Set::Partition->new( list => [qw(g h)], partition => [1, 1] );
+    my $p = $s->next;
+    is_deeply( $p, [ [qw(g)], [qw(h)] ], 'set 1,1 first' );
+    $p = $s->next;
+    is_deeply( $p, [ [qw(h)], [qw(g)] ], 'set 1,1 second' );
+    $p = $s->next;
+    ok( !defined($p), 'set 1,1 exhausted');
 }
 
 {
-	my $s = Set::Partition->new( list => [qw(p q r s)], partition => [3] );
-	my $p = $s->next;
-	is_deeply( $p, [ [qw(p q r)], [qw(s)] ], 'set 3,1 first' );
-	$p = $s->next;
-	is_deeply( $p, [ [qw(p q s)], [qw(r)] ], 'set 3,1 second' );
-	$p = $s->next;
-	is_deeply( $p, [ [qw(p r s)], [qw(q)] ], 'set 3,1 third' );
-	$p = $s->next;
-	is_deeply( $p, [ [qw(q r s)], [qw(p)] ], 'set 3,1 fourth' );
-	$p = $s->next;
-	ok( !defined($p), 'set 3,1 exhausted');
+    my $s = Set::Partition->new( list => [qw(p q r s)], partition => [3] );
+    my $p = $s->next;
+    is_deeply( $p, [ [qw(p q r)], [qw(s)] ], 'set 3,1 first' );
+    $p = $s->next;
+    is_deeply( $p, [ [qw(p q s)], [qw(r)] ], 'set 3,1 second' );
+    $p = $s->next;
+    is_deeply( $p, [ [qw(p r s)], [qw(q)] ], 'set 3,1 third' );
+    $p = $s->next;
+    is_deeply( $p, [ [qw(q r s)], [qw(p)] ], 'set 3,1 fourth' );
+    $p = $s->next;
+    ok( !defined($p), 'set 3,1 exhausted');
 }
 
 {
-	my $s = Set::Partition->new( list => [qw(p q r s)], partition => [3, 0, 1] );
-	my $p = $s->next;
-	is_deeply( $p, [ [qw(p q r)], undef, [qw(s)] ], 'set 3,0,1 first' );
-	$p = $s->next;
-	is_deeply( $p, [ [qw(p q s)], undef, [qw(r)] ], 'set 3,0,1 second' );
-	$p = $s->next;
-	is_deeply( $p, [ [qw(p r s)], undef, [qw(q)] ], 'set 3,0,1 third' );
-	$p = $s->next;
-	is_deeply( $p, [ [qw(q r s)], undef, [qw(p)] ], 'set 3,0,1 fourth' );
-	$p = $s->next;
-	ok( !defined($p), 'set 3,0,1 exhausted');
+    my $s = Set::Partition->new( list => [qw(p q r s)], partition => [3, 0, 1] );
+    my $p = $s->next;
+    is_deeply( $p, [ [qw(p q r)], undef, [qw(s)] ], 'set 3,0,1 first' );
+    $p = $s->next;
+    is_deeply( $p, [ [qw(p q s)], undef, [qw(r)] ], 'set 3,0,1 second' );
+    $p = $s->next;
+    is_deeply( $p, [ [qw(p r s)], undef, [qw(q)] ], 'set 3,0,1 third' );
+    $p = $s->next;
+    is_deeply( $p, [ [qw(q r s)], undef, [qw(p)] ], 'set 3,0,1 fourth' );
+    $p = $s->next;
+    ok( !defined($p), 'set 3,0,1 exhausted');
 }
 
 {
-	my $s = Set::Partition->new( list => ['a' .. 'f'], partition => [3, 1, 2] );
-	my $nr = 0;
-	while (defined(my $expected = <DATA>)) {
-		chomp $expected;
-		my $p = $s->next;
-		my $actual = join( ' ', map {"(@$_)"} @$p );
-		++$nr;
-		is( $expected, $actual, "a..f by 3,1,2 $nr" );
+    my $s = Set::Partition->new(
+		list => {
+			a => 'apple',
+			b => 'banana',
+			c => 'cherry',
+		},
+		partition => [2, 1],
+	);
+	my @p = ($s->next, $s->next, $s->next);
+    ok( !defined($s->next), 'set hash exhausted');
+
+	my $result;
+	for my $p (@p) {
+		$result->{join(';', map {join( '+', sort keys %$_)} @$p)}
+			= join(',', map {join( '+', sort values %$_)} @$p);
 	}
-	my $p = $s->next;
-	ok( !defined($p), 'a..f by 3,1,2 exhausted');
+	is_deeply( $result,
+		{
+			'a+b;c' => 'apple+banana,cherry',
+			'a+c;b' => 'apple+cherry,banana',
+			'b+c;a' => 'banana+cherry,apple',
+		},
+		'hash partitions'
+	);
+}
+
+{
+    my $s = Set::Partition->new( list => ['a' .. 'f'], partition => [3, 1, 2] );
+    my $nr = 0;
+    while (defined(my $expected = <DATA>)) {
+        chomp $expected;
+        my $p = $s->next;
+        my $actual = join( ' ', map {"(@$_)"} @$p );
+        ++$nr;
+        is( $expected, $actual, "a..f by 3,1,2 $nr" );
+    }
+    my $p = $s->next;
+    ok( !defined($p), 'a..f by 3,1,2 exhausted');
 }
 
 cmp_ok( $_, 'eq', $Unchanged, '$_ has not been altered' );
