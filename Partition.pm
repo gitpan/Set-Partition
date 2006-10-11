@@ -7,7 +7,7 @@ package Set::Partition;
 use strict;
 
 use vars qw/$VERSION/;
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 use constant DEBUG => 0; # if you want to see what's going on
 
@@ -17,8 +17,8 @@ Set::Partition - Enumerate all arrangements of a set in fixed subsets
 
 =head1 VERSION
 
-This document describes version 0.02 of Set::Partition,
-released 2006-06-05.
+This document describes version 0.03 of Set::Partition,
+released 2006-10-11.
 
 =head1 SYNOPSIS
 
@@ -244,9 +244,10 @@ that the following arrangement I<will> be encountered:
 
 =over 8
 
-=item L<perl>
+=item L<Algorithm::Combinatorics>
 
-General information about Perl.
+Permutations, combinations, derangements and more; all you need
+for your set transformations.
 
 =back
 

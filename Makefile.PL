@@ -14,6 +14,9 @@ else {
 }
 
 WriteMakefile(
-    NAME         => 'Set::Partition',
-    VERSION_FROM => 'Partition.pm',
+    NAME          => 'Set::Partition',
+    VERSION_FROM  => 'Partition.pm',
+    ABSTRACT_FROM => 'Partition.pm',
+    AUTHOR        => 'David Landgren',
+    LICENSE       => 'perl',
 );
